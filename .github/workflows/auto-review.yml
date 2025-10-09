@@ -1,0 +1,54 @@
+name: 🔄 Move Issue to 'In Review' on PR Open
+
+on:
+  pull_request:
+    types: [opened, reopened] # Aciona quando o PR é criado ou reaberto
+
+# O job precisa de permissão de escrita no Kanban (via PAT)
+permissions:
+  contents: read
+
+jobs:
+  move_issue_to_review:
+    runs-on: ubuntu-latest
+
+    # VARIÁVEIS DE AMBIENTE: O nome do projeto foi ajustado!
+    env:
+      GITHUB_TOKEN: ${{ secrets.PAT_PROJECT_TOKEN }}
+      PROJECT_NAME: "@Viniciustertuliano's PhotoVault Project" # NOME EXATO DO SEU PROJECT
+      COLUMN_NAME: "In Review"                               # NOME EXATO DA SUA COLUNA DE REVISÃO
+      FIELD_NAME: "Status"                                   # O nome do campo do seu Project (padrão é 'Status')
+
+    steps:
+      - name: Instalar GitHub CLI
+        uses: cli/cli-action/setup@v0
+
+      # 1. Extrai números de Issues referenciadas no corpo do PR (ex: #1, #2, etc.)
+      - name: Obter IDs das Issues Referenciadas
+        id: issue_parser
+        run: |
+          # Extrai números de Issues precedidos por '#'
+          ISSUE_IDS=$(echo "${{ github.event.pull_request.body }}" | grep -oP '#\K\d+' | tr '\n' ' ' | sort -u)
+          
+          if [ -z "$ISSUE_IDS" ]; then
+            echo "Nenhuma Issue encontrada. Pulando automação."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Issues para mover: $ISSUE_IDS"
+          echo "issue_ids=$ISSUE_IDS" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      # 2. Mover cada Issue para a coluna 'In Review'
+      - name: Mover Issues para '${{ env.COLUMN_NAME }}'
+        if: steps.issue_parser.outputs.skip == 'false'
+        run: |
+          REPO="${{ github.repository }}"
+          for ISSUE_ID in ${{ steps.issue_parser.outputs.issue_ids }}; do
+            echo "Movendo Issue #$ISSUE_ID para '${COLUMN_NAME}'..."
+          
+            # Adiciona/Move a Issue para a coluna usando o campo 'Status'
+            gh project item-add "$PROJECT_NAME" --issue "$ISSUE_ID" --field-value "$COLUMN_NAME" --field-name "$FIELD_NAME" --repo "$REPO" 
+          
+            echo "Issue #$ISSUE_ID movida para o Project e para o status 'In Review'."
+          done
