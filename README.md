@@ -95,11 +95,19 @@ classDiagram
         +expire()
     }
 
+    class UserRole {
+        <<enumeration>>
+        PHOTOGRAPHER
+        CLIENT
+    }
+
     User <|-- Photographer
     User <|-- Client
+    User --> UserRole
     Photographer "1" --> "*" Folder
     Folder "1" --> "*" File
     Folder "1" --> "0..*" ShareLink
+
 ```
 
 ---
@@ -165,14 +173,14 @@ Acesse:
 
 O projeto segue a metodologia **Scrum com micro-sprints**, ideal para aprendizado e entregas incrementais.
 
-| Fase | Sprint | Foco | Duração |
-|------|--------|------|----------|
-| Backend | 1 | Estrutura e autenticação | 1 semana |
-| Backend | 2 | Sistema de arquivos (EFS) | 1 semana |
-| Backend | 3 | Compartilhamento e links | 1 semana |
-| Frontend | 4 | Login e base visual | 1 semana |
-| Frontend | 5 | Upload, pastas e links | 1 semana |
-| DevOps | 6 | Deploy e monitoramento | 1 semana |
+| Fase     | Sprint | Foco                      | Duração  |
+|----------|--------|---------------------------|----------|
+| Backend  | 1      | Estrutura e autenticação  | 1 semana |
+| Backend  | 2      | Sistema de arquivos (EFS) | 1 semana |
+| Backend  | 3      | Compartilhamento e links  | 1 semana |
+| Frontend | 4      | Login e base visual       | 1 semana |
+| Frontend | 5      | Upload, pastas e links    | 1 semana |
+| DevOps   | 6      | Deploy e monitoramento    | 1 semana |
 
 **Total:** 6 semanas — micro-sprints curtos e objetivos.
 
