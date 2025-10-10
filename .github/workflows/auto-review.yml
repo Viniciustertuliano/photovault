@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Instalar GitHub CLI
           # Use a versão mais recente e estável do GitHub CLI setup action
-        uses: cli/cli-action@v2
+        uses: actions/github-script@v8
 
       # 1. Extrai números de Issues referenciadas no corpo do PR (ex: #1, #2, etc.)
       - name: Obter IDs das Issues Referenciadas
@@ -53,3 +53,4 @@ jobs:
           
             echo "Issue #$ISSUE_ID movida para o Project e para o status 'In Review'."
           done
+
