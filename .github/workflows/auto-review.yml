@@ -21,7 +21,8 @@ jobs:
 
     steps:
       - name: Instalar GitHub CLI
-        uses: cli/cli-action/setup@v0
+          # Use a versão mais recente e estável do GitHub CLI setup action
+        uses: cli/cli-action@v2
 
       # 1. Extrai números de Issues referenciadas no corpo do PR (ex: #1, #2, etc.)
       - name: Obter IDs das Issues Referenciadas
