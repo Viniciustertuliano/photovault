@@ -27,4 +27,48 @@ public class Folder {
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShareLink> shereLinks = new ArrayList<>();
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Photographer getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Photographer owner) {
+        this.owner = owner;
+    }
+
+    public List<File> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<File> files) {
+        this.files = files;
+    }
+
+    public List<ShareLink> getShereLinks() {
+        return shereLinks;
+    }
+
+    public void setShereLinks(List<ShareLink> shereLinks) {
+        this.shereLinks = shereLinks;
+    }
 }
