@@ -2,6 +2,7 @@ package com.PhotoVault.exception.handler;
 
 import com.PhotoVault.exception.EmailAlreadyExistsException;
 import com.PhotoVault.exception.ErrorResponse;
+import com.PhotoVault.exception.ForbiddenException;
 import com.PhotoVault.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,5 +56,11 @@ public class GlobalExceptionHandler {
 
         ErrorResponse errorResponse = buildErrorResponse(HttpStatus.BAD_REQUEST, errors, request);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex, WebRequest request){
+        ErrorResponse error = buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }

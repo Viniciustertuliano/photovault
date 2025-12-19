@@ -73,7 +73,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/private/folders/**").hasRole("PHOTOGRAPHER")
+                        .requestMatchers("/api/folders/**").hasRole("PHOTOGRAPHER")
                         .requestMatchers("/api/photographers/**").hasRole("PHOTOGRAPHER")
                         .requestMatchers(HttpMethod.GET, "/api/shareLinks/**").authenticated()
                         .anyRequest().authenticated()
