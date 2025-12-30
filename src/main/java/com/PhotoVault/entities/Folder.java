@@ -18,7 +18,7 @@ public class Folder {
 
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "photographer_id", nullable = false)
     private Photographer owner;
 
