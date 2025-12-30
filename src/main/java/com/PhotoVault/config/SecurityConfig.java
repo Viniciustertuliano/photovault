@@ -78,9 +78,11 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                                 ).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/share/**").permitAll()
+                        .requestMatchers("/api/files/**").permitAll()
                         .requestMatchers("/api/folders/**").hasRole("PHOTOGRAPHER")
+                        .requestMatchers("/api/shareLinks/**").hasRole("PHOTOGRAPHER")
                         .requestMatchers("/api/photographers/**").hasRole("PHOTOGRAPHER")
-                        .requestMatchers(HttpMethod.GET, "/api/shareLinks/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
