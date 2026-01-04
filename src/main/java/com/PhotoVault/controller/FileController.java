@@ -13,6 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,12 +62,15 @@ public class FileController {
             summary = "Get files by folder ID",
             description = "Retrieves all files within the specified folder."
     )
-    public ResponseEntity<List<FileResponseDTO>> getFilesByFolder(@Parameter(description = "ID of the folder") @PathVariable Long folderId){
+    public ResponseEntity<Page<FileResponseDTO>> getFilesByFolder(
+            @Parameter(description = "ID of the folder")
+            @PathVariable Long folderId,
+            @PageableDefault(size = 20, sort = "uploadDate")Pageable pageable){
 
-        return ResponseEntity.ok(fileService.getFilesByFolder(folderId));
+        return ResponseEntity.ok(fileService.getFilesByFolder(folderId, pageable));
     }
 
-    @GetMapping("file/{id}")
+    @GetMapping("files/{id}")
     @Operation(summary = "Download a file by ID", description = "Downloads the file with the specified ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "File downloaded successfully"),
@@ -96,7 +102,7 @@ public class FileController {
                 .body(resource);
     }
 
-    @DeleteMapping("file/{id}")
+    @DeleteMapping("files/{id}")
     @Operation(summary = "Delete a file by ID", description = "Deletes the file with the specified ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "File deleted successfully"),

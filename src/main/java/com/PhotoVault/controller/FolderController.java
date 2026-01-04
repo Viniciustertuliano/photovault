@@ -4,6 +4,7 @@ import com.PhotoVault.dto.request.FolderRequestDTO;
 import com.PhotoVault.dto.response.FolderResponseDTO;
 import com.PhotoVault.services.FolderService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,6 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,33 +54,37 @@ public class FolderController {
         @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content(mediaType = "application/json"))
     })
-    public ResponseEntity<FolderResponseDTO> getFolderById(@PathVariable Long id){
+    public ResponseEntity<FolderResponseDTO> getFolderById(
+            @Parameter(description = "Folder ID")
+            @PathVariable Long id){
         return ResponseEntity.ok(folderService.findById(id));
     }
 
     @GetMapping
-    @Operation(summary = "Get all folders", description = "Retrieves all folders.")
+    @Operation(summary = "List all folders", description = "Get paginated list of all folders (admin) or photographer's folders")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Folders retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = FolderResponseDTO.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = "application/json"))
     })
-    public ResponseEntity<List<FolderResponseDTO>> getAllFolders(){
-        return ResponseEntity.ok(folderService.findAll());
+    public ResponseEntity<Page<FolderResponseDTO>> getAllFolders(
+            @PageableDefault(size = 20, sort = "createdAt") Pageable  pageable){
+        return ResponseEntity.ok(folderService.findAll(pageable));
     }
 
-    @GetMapping("/owner")
-    @Operation(summary = "Get folders by owner ID", description = "Retrieves all folders owned by the authenticated photographer.")
+    @GetMapping("/me")
+    @Operation(summary = "Get my folders", description = "Get paginated list of folders owned by authenticated photographer")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Folders retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = FolderResponseDTO.class))),
         @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = "application/json"))
     })
-    public ResponseEntity<List<FolderResponseDTO>> getAllByOwnerId(){
-        return ResponseEntity.ok(folderService.findAllByOwnerId());
+    public ResponseEntity<Page<FolderResponseDTO>> getAllByOwnerId(
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable){
+        return ResponseEntity.ok(folderService.findAllByOwnerId(pageable));
     }
 
-    @GetMapping("/photographer/{photographerId}")
+    @GetMapping("/photographers/{photographerId}")
     @Operation(summary = "Get folders by photographer ID", description = "Retrieves all folders for a specific photographer by their ID.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Folders retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = FolderResponseDTO.class))),
@@ -84,8 +92,11 @@ public class FolderController {
         @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404", description = "Photographer not found", content = @Content(mediaType = "application/json"))
     })
-    public ResponseEntity<List<FolderResponseDTO>> getFoldersByPhotographerId(@PathVariable Long photographerId){
-        return ResponseEntity.ok(folderService.findAllByPhotographerId(photographerId));
+    public ResponseEntity<Page<FolderResponseDTO>> getFoldersByPhotographerId(
+            @Parameter(description = "Photographer ID")
+            @PathVariable Long photographerId,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable){
+        return ResponseEntity.ok(folderService.findAllByPhotographerId(photographerId, pageable));
     }
 
     @PutMapping("/{id}")
@@ -97,7 +108,9 @@ public class FolderController {
         @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content(mediaType = "application/json"))
     })
-    public ResponseEntity<FolderResponseDTO> updateFolder(@PathVariable Long id, @Valid @RequestBody FolderRequestDTO folderRequest){
+    public ResponseEntity<FolderResponseDTO> updateFolder(
+            @Parameter(description = "Folder ID")
+            @PathVariable Long id, @Valid @RequestBody FolderRequestDTO folderRequest){
         return ResponseEntity.ok(folderService.updateFolder(id, folderRequest));
     }
 
@@ -109,7 +122,9 @@ public class FolderController {
         @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content(mediaType = "application/json"))
     })
-    public ResponseEntity<Void> deleteFolder(@PathVariable Long id){
+    public ResponseEntity<Void> deleteFolder(
+            @Parameter(description = "Folder ID")
+            @PathVariable Long id){
         folderService.deleteFolder(id);
         return ResponseEntity.noContent().build();
     }

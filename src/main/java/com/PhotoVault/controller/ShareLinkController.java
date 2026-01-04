@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -79,9 +81,10 @@ public class ShareLinkController {
     })
     public ResponseEntity<FolderAccessDTO> accessFolderByToken(
             @Parameter(description = "Share link token")
-            @PathVariable String token){
+            @PathVariable String token,
+            @ParameterObject Pageable pageable){
 
-        FolderAccessDTO response = shareLinkService.accessFolderByToken(token);
+        FolderAccessDTO response = shareLinkService.accessFolderByToken(token, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

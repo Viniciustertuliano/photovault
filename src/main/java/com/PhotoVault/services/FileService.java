@@ -11,6 +11,8 @@ import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -120,15 +122,14 @@ public class FileService {
                 .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
     }
 
-    public List<FileResponseDTO> getFilesByFolder(Long folderId){
+    public Page<FileResponseDTO> getFilesByFolder(Long folderId, Pageable pageable){
         folderRepository.findById(folderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", folderId));
 
-        List<File> files = fileRepository.findByFolderId(folderId);
+        return  fileRepository.findByFolderId(folderId, pageable)
+                .map(this::toResponseDTO);
 
-        return files.stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+
     }
 
     public FileResponseDTO uploadFile (Long folderId, MultipartFile file){
