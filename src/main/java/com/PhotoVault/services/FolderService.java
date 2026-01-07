@@ -118,4 +118,15 @@ public class FolderService {
 
         folderRepository.delete(folder);
     }
+
+    @Transactional
+    public FolderResponseDTO restoreFolder(Long id){
+        Folder folder = folderRepository.findByIdIncluidingDeleted(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
+
+        folder.restore();
+        Folder restored = folderRepository.save(folder);
+
+        return toResponseDTO(restored);
+    }
 }

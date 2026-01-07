@@ -128,4 +128,10 @@ public class FolderController {
         folderService.deleteFolder(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/restore")
+    @Operation(summary = "Restore folder", description = "Restores a previously deleted folder by its ID.")
+    public ResponseEntity<FolderResponseDTO> restoreFolder(@PathVariable Long id){
+        return ResponseEntity.ok(folderService.restoreFolder(id));
+    }
 }

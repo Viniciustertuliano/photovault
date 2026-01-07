@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -146,7 +148,7 @@ public class FolderRepositoryTest {
                 createFolder("testFolder2", savedPhotographer),
                 createFolder("testFolder3", savedPhotographer)));
 
-        List<Folder> foundFolders = folderRepository.findByOwnerId(savedPhotographer.getId());
+        Page<Folder> foundFolders = folderRepository.findByOwnerId(savedPhotographer.getId(), PageRequest.of(0, 10));
 
         assertThat(foundFolders).isNotEmpty();
         assertThat(foundFolders).hasSize(3);
