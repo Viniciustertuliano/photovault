@@ -40,7 +40,7 @@ public class Folder {
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Where(clause = "deleted_at IS NULL")
-   private List<ShareLink> shereLinks = new ArrayList<>();
+   private List<ShareLink> shareLinks = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -121,11 +121,11 @@ public class Folder {
         this.files = files;
     }
 
-    public List<ShareLink> getShereLinks() {
-        return shereLinks;
+    public List<ShareLink> getShareLinks() {
+        return shareLinks;
     }
 
-    public void setShereLinks(List<ShareLink> shereLinks) {
-        this.shereLinks = shereLinks;
+    public void setShareLinks(List<ShareLink> shareLinks) {
+        this.shareLinks = shareLinks;
     }
 }
