@@ -1,5 +1,7 @@
 package com.PhotoVault.dto.response;
 
+import org.springframework.data.domain.Page;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -8,9 +10,9 @@ public class FolderAccessDTO {
     private final String name;
     private final LocalDateTime createdAt;
     private final PhotographerSummaryDTO owner;
-    private final List<FileResponseDTO> files;
+    private final Page<FileResponseDTO> files;
 
-    public FolderAccessDTO(Long id, String name, LocalDateTime createdAt, PhotographerSummaryDTO owner, List<FileResponseDTO> files) {
+    public FolderAccessDTO(Long id, String name, LocalDateTime createdAt, PhotographerSummaryDTO owner, Page<FileResponseDTO> files) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
@@ -34,7 +36,7 @@ public class FolderAccessDTO {
         return owner;
     }
 
-    public List<FileResponseDTO> getFiles() {
+    public Page<FileResponseDTO> getFiles() {
         return files;
     }
 }

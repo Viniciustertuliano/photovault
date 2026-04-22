@@ -9,15 +9,19 @@ import com.PhotoVault.exception.ForbiddenException;
 import com.PhotoVault.exception.ResourceNotFoundException;
 import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class FolderService {
     private final FolderRepository folderRepository;
     private final PhotographerRepository photographerRepository;
@@ -48,6 +52,7 @@ public class FolderService {
         );
     }
 
+    @Transactional
     public FolderResponseDTO createFolder(FolderRequestDTO request){
         Photographer photographer = getAuthenticatedPhotographer();
 
@@ -68,29 +73,24 @@ public class FolderService {
         return toResponseDTO(folder);
     }
 
-    public List<FolderResponseDTO> findAll(){
-        return folderRepository.findAll()
-                .stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+    public Page<FolderResponseDTO> findAll(Pageable pageable){
+        return folderRepository.findAll(pageable)
+                .map(this::toResponseDTO);
     }
 
-    public List<FolderResponseDTO> findAllByOwnerId(){
+    public Page<FolderResponseDTO> findAllByOwnerId(Pageable pageable){
         Photographer photographer = getAuthenticatedPhotographer();
 
-        return folderRepository.findByOwnerId(photographer.getId())
-                .stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+        return folderRepository.findByOwnerId(photographer.getId(), pageable)
+                .map(this::toResponseDTO);
     }
 
-    public List<FolderResponseDTO> findAllByPhotographerId(Long photographerId){
-        return folderRepository.findByOwnerId(photographerId)
-                .stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+    public Page<FolderResponseDTO> findAllByPhotographerId(Long photographerId, Pageable pageable){
+        return folderRepository.findByOwnerId(photographerId, pageable)
+                .map(this::toResponseDTO);
     }
 
+    @Transactional
     public FolderResponseDTO updateFolder(Long id, FolderRequestDTO request){
         Folder folder = folderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
@@ -106,6 +106,7 @@ public class FolderService {
         return toResponseDTO(updated);
     }
 
+    @Transactional
     public void deleteFolder(Long id){
         Folder folder = folderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
@@ -116,5 +117,16 @@ public class FolderService {
         }
 
         folderRepository.delete(folder);
+    }
+
+    @Transactional
+    public FolderResponseDTO restoreFolder(Long id){
+        Folder folder = folderRepository.findByIdIncluidingDeleted(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
+
+        folder.restore();
+        Folder restored = folderRepository.save(folder);
+
+        return toResponseDTO(restored);
     }
 }

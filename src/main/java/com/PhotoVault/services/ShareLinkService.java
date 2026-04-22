@@ -12,6 +12,8 @@ import com.PhotoVault.repository.FileRepository;
 import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
 import com.PhotoVault.repository.ShareLinkRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -114,7 +116,7 @@ public class ShareLinkService {
         return toResponseDTO(saved);
     }
 
-    public FolderAccessDTO accessFolderByToken(String token) {
+    public FolderAccessDTO accessFolderByToken(String token, Pageable pageable) {
         ShareLink shareLink = shareLinkRepository.findByToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("ShareLink", "token", token));
 
@@ -135,8 +137,7 @@ public class ShareLinkService {
                 folder.getOwner().getName()
         );
 
-        List<FileResponseDTO> files = fileService.getFilesByFolder(folder.getId())
-                .stream()
+        Page<FileResponseDTO> files = fileService.getFilesByFolder(folder.getId(), pageable)
                 .map(file -> new FileResponseDTO(
                         file.getId(),
                         file.getName(),
@@ -146,8 +147,7 @@ public class ShareLinkService {
                         file.getFolderId(),
                         file.getFolderName(),
                         "/api/files/" + file.getId() + "?shareToken=" + token
-                ))
-                .collect(Collectors.toList());
+                ));
 
         return new FolderAccessDTO(
                 folder.getId(),
