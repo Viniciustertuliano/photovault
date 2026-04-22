@@ -91,6 +91,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/shareLinks/**").hasRole("PHOTOGRAPHER")
                         .requestMatchers("/api/photographers/**").hasRole("PHOTOGRAPHER")
                         .requestMatchers("/api/clients/**").hasRole("CLIENT")
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

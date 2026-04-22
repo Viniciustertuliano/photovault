@@ -10,7 +10,6 @@ import com.PhotoVault.repository.FileRepository;
 import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -24,12 +23,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -42,17 +37,20 @@ public class FileService {
     private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
     private final StorageService storageService;
+    private final FileValidationService fileValidationService;
 
     public FileService(FileRepository fileRepository,
                        FolderRepository folderRepository,
                        PhotographerRepository photographerRepository,
                        FileStorageProperties fileStorageProperties,
-                        StorageService storageService) {
+                        StorageService storageService,
+                    FileValidationService fileValidationService) {
         this.fileRepository = fileRepository;
         this.folderRepository = folderRepository;
         this.photographerRepository = photographerRepository;
         this.fileStorageProperties = fileStorageProperties;
         this.storageService = storageService;
+        this.fileValidationService = fileValidationService;
 
         this.fileStorageLocation = Paths.get(fileStorageProperties.getDir())
                 .toAbsolutePath().normalize();
@@ -87,38 +85,10 @@ public class FileService {
         );
     }
 
-    private void validadeFileExtension(String fileName){
-        String extension = getFileExtension(fileName);
 
-        List<String> allowedExtensions = Arrays.asList(
-                fileStorageProperties.getAllowedExtensions().split(",")
-        );
-        if (!allowedExtensions.contains(extension.toLowerCase())) {
-            throw new InvalidFileException(
-                    "File type not allowed. Allowed types: " +
-                    fileStorageProperties.getAllowedExtensions()
-            );
-        }
-    }
-
-    private void validateFileSize(Long size){
-        if (size > fileStorageProperties.getMaxSize()) {
-            long maxSizeMB = fileStorageProperties.getMaxSize() / (1024 * 1024);
-            throw new InvalidFileException(
-                    "File size exceeds maximum allowed (" + maxSizeMB + "MB)"
-            );
-        }
-    }
-
-    private String getFileExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) {
-            return "";
-        }
-        return fileName.substring(fileName.lastIndexOf(".") + 1);
-    }
 
     private String generateUniqueFileName(String originalFileName) {
-        String extension = getFileExtension(originalFileName);
+        String extension = fileValidationService.getFileExtension(originalFileName);
         return UUID.randomUUID().toString() + "." + extension;
     }
 
@@ -145,8 +115,8 @@ public class FileService {
 
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
 
-        validadeFileExtension(originalFileName);
-        validateFileSize(file.getSize());
+        fileValidationService.validateFileExtension(originalFileName);
+        fileValidationService.validateFileSize(file.getSize());
 
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", folderId));
@@ -211,7 +181,7 @@ public class FileService {
     }
 
 
-    public void validateAccessForFile(String shareToken, Long id) {
+    public void validateAccessForFile(Long id) {
         File file = fileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("File", id));
 

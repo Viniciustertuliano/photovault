@@ -31,11 +31,15 @@ public class S3StorageService implements StorageService {
 
     private final S3Client s3Client;
 
+    private final S3Presigner s3Presigner;
+
     private final String bucketName;
 
-    public S3StorageService(S3Client s3Client, @Value("${AWS_S3_BUCKET_NAME}")String bucketName) {
+    public S3StorageService(S3Client s3Client, S3Presigner s3Presigner, @Value("${AWS_S3_BUCKET_NAME}")String bucketName) {
         this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
         this.bucketName = bucketName;
+        ensureBucketExists();
     }
 
     private void ensureBucketExists() {
@@ -131,21 +135,11 @@ public class S3StorageService implements StorageService {
 
     @Override
     public String generatePresignedUrl(String filePath, long expirationMinutes) {
-        try {
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(filePath)
-                    .build();
-
-            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+        try {     
+            return s3Presigner.presignGetObject(req -> req
                     .signatureDuration(Duration.ofMinutes(expirationMinutes))
-                    .getObjectRequest(getObjectRequest)
-                    .build();
-
-            S3Presigner presigner = S3Presigner.create();
-            String presignedUrl = presigner.presignGetObject(presignRequest).url().toString();
-            presigner.close();
-            return presignedUrl;
+                    .getObjectRequest(go -> go.bucket(bucketName).key(filePath))
+            ).url().toString(); 
 
         }catch (S3Exception e ){
             throw new FileStorageException("Could not generate presigned URL: " + filePath, e);
