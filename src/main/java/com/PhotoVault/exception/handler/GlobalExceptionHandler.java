@@ -72,4 +72,16 @@ public class GlobalExceptionHandler {
         ErrorResponse error = buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTokenException(InvalidTokenException ex, WebRequest request){
+        ErrorResponse error = buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(ExpiredTokenException.class)
+    public ResponseEntity<ErrorResponse> handleExpiredTokenException(ExpiredTokenException ex, WebRequest request){
+        ErrorResponse error = buildErrorResponse(HttpStatus.GONE, ex.getMessage(), request);
+        return ResponseEntity.status(HttpStatus.GONE).body(error);
+    }
 }
