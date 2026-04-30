@@ -5,7 +5,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-@MappedSuperclass
+@Entity
+@Table(name = "tb_users")
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class User {
 
     @Id
