@@ -26,6 +26,11 @@ public class PasswordResetToken {
 
     private Instant usedAt;
 
+    
+
+    public PasswordResetToken() {
+    }
+
     public PasswordResetToken(UUID token, User user, Instant expiryDate) {
         this.token = token;
         this.user = user;

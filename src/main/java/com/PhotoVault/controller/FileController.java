@@ -78,7 +78,7 @@ public class FileController {
             @ApiResponse(responseCode = "404", description = "File not found")
     })
     public ResponseEntity<Resource> downloadFile(
-            @Parameter(description = "ID of the file to download") @PathVariable Long id,
+            @Parameter(description = "ID of the file to download") @PathVariable Long fileId,
             @RequestParam(value = "shareToken", required = false) String shareToken,
             Authentication authentication){
 
@@ -86,16 +86,16 @@ public class FileController {
         boolean hasAuthentication = authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal());
 
         if (hasShareToken) {
-            shareLinkService.validateTokenForFile(shareToken, id);
+            shareLinkService.validateTokenForFile(shareToken, fileId);
         } else if (hasAuthentication) {
-            fileService.validateAccessForFile(shareToken, id);
+            fileService.validateAccessForFile(fileId);
 
         }else {
             throw new ForbiddenException("Access denied. Provide a valid shareToken or authenticate.");
         }
 
-        Resource resource = fileService.downloadFile(id);
-        File fileEntity = fileService.getFileEntity(id);
+        Resource resource = fileService.downloadFile(fileId);
+        File fileEntity = fileService.getFileEntity(fileId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(fileEntity.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getName() + "\"")
