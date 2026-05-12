@@ -1,6 +1,7 @@
 package com.PhotoVault.services;
 
 import com.PhotoVault.config.FileStorageProperties;
+import com.PhotoVault.dto.request.FileUpdateDTO;
 import com.PhotoVault.dto.response.FileResponseDTO;
 import com.PhotoVault.entities.File;
 import com.PhotoVault.entities.Folder;
@@ -51,6 +52,7 @@ public class FileService {
         this.fileStorageProperties = fileStorageProperties;
         this.storageService = storageService;
         this.fileValidationService = fileValidationService;
+
 
         this.fileStorageLocation = Paths.get(fileStorageProperties.getDir())
                 .toAbsolutePath().normalize();
@@ -158,6 +160,36 @@ public class FileService {
         }catch (Exception ex) {
             throw new FileStorageException("File not found: " + file.getName(), ex);
         }
+    }
+
+    @Transactional
+    public FileResponseDTO updateFile(Long fileId, FileUpdateDTO updateDTO){
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
+
+        Photographer photographer = getAuthenticatedPhotographer();
+
+        if (!file.getFolder().getOwner().getId().equals(photographer.getId())){
+            throw new ForbiddenException("You do not have permission to modify this file");
+        }
+
+        if (updateDTO.name() != null && !updateDTO.name().trim().isEmpty()){
+            file.setName(updateDTO.name().trim());
+        }
+
+        if (updateDTO.folderId() != null && !file.getFolder().getId().equals(updateDTO.folderId())){
+            Folder targetFolder = folderRepository.findById(updateDTO.folderId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Folder", updateDTO.folderId()));
+
+            if (!targetFolder.getOwner().getId().equals(photographer.getId())){
+                throw new ForbiddenException("You do not have permission to move files to this folder");
+            }
+
+            file.setFolder(targetFolder);
+        }
+
+        File updaFile = fileRepository.save(file);
+        return toResponseDTO(updaFile);
     }
 
     @Transactional
