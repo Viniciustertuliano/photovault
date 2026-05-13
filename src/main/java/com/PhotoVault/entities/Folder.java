@@ -6,7 +6,9 @@ import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "tb_folders")
@@ -30,9 +32,12 @@ public class Folder {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "photographer_id", nullable = false)
-    private Photographer owner;
+    @ManyToMany
+    @JoinTable(
+        name = "tb_folders_owners",
+        joinColumns = @JoinColumn(name = "folder_id"),
+        inverseJoinColumns = @JoinColumn(name = "photographer_id"))
+    private Set<Photographer> owners = new HashSet<>();
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Where(clause = "deleted_at IS NULL")
@@ -40,7 +45,7 @@ public class Folder {
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Where(clause = "deleted_at IS NULL")
-   private List<ShareLink> shareLinks = new ArrayList<>();
+    private List<ShareLink> shareLinks = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -105,12 +110,25 @@ public class Folder {
         this.name = name;
     }
 
-    public Photographer getOwner() {
-        return owner;
+    public Set<Photographer> getOwners() {
+            return owners;
     }
 
-    public void setOwner(Photographer owner) {
-        this.owner = owner;
+    public void setOwners(Set<Photographer> owners) {
+        this.owners = owners;
+    }
+
+    public void addOwner(Photographer owner) {
+        this.owners.add(owner);
+    }
+
+    public void removeOwner(Photographer owner) {
+        this.owners.remove(owner);
+    }
+
+    public boolean isOwner(Photographer photographer) {
+        return this.owners.stream()
+                .anyMatch(owner -> owner.getId().equals(photographer.getId()));
     }
 
     public List<File> getFiles() {

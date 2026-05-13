@@ -93,7 +93,7 @@ public class ShareLinkService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if (!folder.getOwner().getId().equals(photographer.getId())) {
+        if (!folder.isOwner(photographer)) {
             throw new ForbiddenException("You can only create share links for your own folders");
         }
 
@@ -132,10 +132,9 @@ public class ShareLinkService {
 
         Folder folder = shareLink.getFolder();
 
-        PhotographerSummaryDTO owner = new PhotographerSummaryDTO(
-                folder.getOwner().getId(),
-                folder.getOwner().getName()
-        );
+        List<PhotographerSummaryDTO> ownersDTO = folder.getOwners().stream()
+                .map(owner -> new PhotographerSummaryDTO(owner.getId(), owner.getName()))
+                .collect(Collectors.toList());
 
         Page<FileResponseDTO> files = fileService.getFilesByFolder(folder.getId(), pageable)
                 .map(file -> new FileResponseDTO(
@@ -153,7 +152,7 @@ public class ShareLinkService {
                 folder.getId(),
                 folder.getName(),
                 folder.getCreatedAt(),
-                owner,
+                ownersDTO,
                 files
         );
     }
@@ -174,7 +173,7 @@ public class ShareLinkService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if(!shareLink.getFolder().getOwner().getId().equals(photographer.getId())){
+        if(!shareLink.getFolder().isOwner(photographer)){
             throw new ForbiddenException("You can only revoke your own share links");
         }
 
@@ -188,7 +187,7 @@ public class ShareLinkService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if(!shareLink.getFolder().getOwner().getId().equals(photographer.getId())){
+        if(!shareLink.getFolder().isOwner(photographer)){
             throw new ForbiddenException("You can only renew your own share links");
         }
 
