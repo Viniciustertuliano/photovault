@@ -31,17 +31,20 @@ public class ShareLinkService {
     private final PhotographerRepository photographerRepository;
     private final FileService fileService;
     private final FileRepository fileRepository;
+    private final EmailService emailService;
 
     public ShareLinkService(ShareLinkRepository shareLinkRepository,
                             FolderRepository folderRepository,
                             PhotographerRepository photographerRepository,
                             FileService fileService,
-                            FileRepository fileRepository) {
+                            FileRepository fileRepository,
+                            EmailService emailService) {
         this.shareLinkRepository = shareLinkRepository;
         this.folderRepository = folderRepository;
         this.photographerRepository = photographerRepository;
         this.fileService = fileService;
         this.fileRepository = fileRepository;
+        this.emailService = emailService;
     }
 
     private Photographer getAuthenticatedPhotographer() {
@@ -112,6 +115,10 @@ public class ShareLinkService {
         shareLink.setAccessCount(0);
 
         ShareLink saved = shareLinkRepository.save(shareLink);
+
+        if (request.getClientEmail() != null && !request.getClientEmail().trim().isEmpty()) {
+            emailService.sendShareLinkEmail(request.getClientEmail(), photographer.getName(), folder.getName(), saved.getToken());
+        }
 
         return toResponseDTO(saved);
     }
