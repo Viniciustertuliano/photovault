@@ -1,19 +1,18 @@
 package com.PhotoVault.entities;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "tb_photographers")
 public class Photographer extends User{
 
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Folder> folders = new ArrayList<>();
+    @ManyToMany(mappedBy = "owners")
+    private Set<Folder> folders = new HashSet<>();
 
     public Photographer() {
     }
@@ -21,4 +20,13 @@ public class Photographer extends User{
     public Photographer(Long id, String name, String email, String password, UserRole role) {
         super(id, name, email, password, role);
     }
+
+    public Set<Folder> getFolders() {
+        return folders;
+    }
+
+    public void setFolders(Set<Folder> folders) {
+        this.folders = folders;
+    }
+
 }

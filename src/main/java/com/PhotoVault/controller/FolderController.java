@@ -1,5 +1,6 @@
 package com.PhotoVault.controller;
 
+import com.PhotoVault.dto.request.FolderOwnershipUpdateDTO;
 import com.PhotoVault.dto.request.FolderRequestDTO;
 import com.PhotoVault.dto.response.FolderResponseDTO;
 import com.PhotoVault.services.FolderService;
@@ -18,8 +19,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/folders")
@@ -113,6 +112,15 @@ public class FolderController {
             @PathVariable Long id, @Valid @RequestBody FolderRequestDTO folderRequest){
         return ResponseEntity.ok(folderService.updateFolder(id, folderRequest));
     }
+
+    @PatchMapping("/{id}/owners")
+    public ResponseEntity<FolderResponseDTO> updateFolderOwners(
+            @Parameter(description = "ID of the folder to update") @PathVariable("id") Long id,
+            @Valid @RequestBody FolderOwnershipUpdateDTO requestOwnerDTO){
+                FolderResponseDTO folderResponseDTO = folderService.updateOwners(id, requestOwnerDTO);
+                return ResponseEntity.ok(folderResponseDTO);
+            }
+    
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete folder", description = "Deletes a folder by its ID.")

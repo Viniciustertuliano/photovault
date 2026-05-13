@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.hateoas.RepresentationModel;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -16,13 +17,13 @@ public class FolderResponseDTO extends RepresentationModel<FolderResponseDTO> {
     private final Long id;
     private final String name;
     private final LocalDateTime createdAt;
-    private final PhotographerSummaryDTO owner;
+    private final List<PhotographerSummaryDTO> owners;
 
-    public FolderResponseDTO(Long id, String name, LocalDateTime createdAt, PhotographerSummaryDTO owner) {
+    public FolderResponseDTO(Long id, String name, LocalDateTime createdAt, List<PhotographerSummaryDTO> owners) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
-        this.owner = owner;
+        this.owners = owners;
         addHateoasLinks();
     }
 
@@ -42,9 +43,11 @@ public class FolderResponseDTO extends RepresentationModel<FolderResponseDTO> {
         add(linkTo(methodOn(ShareLinkController.class).createShareLink(null, null))
                 .withRel("create-share-link"));
 
-        if (owner != null) {
-            add(linkTo(methodOn(FolderController.class).getFoldersByPhotographerId(owner.getId(), null))
-                    .withRel("owner-folders"));
+        if (owners != null && !owners.isEmpty()) {
+            for (PhotographerSummaryDTO owner : owners) {
+                add(linkTo(methodOn(FolderController.class).getFoldersByPhotographerId(owner.getId(), null))
+                        .withRel("owner-folders"));
+            }
         }
     }
 
@@ -60,7 +63,7 @@ public class FolderResponseDTO extends RepresentationModel<FolderResponseDTO> {
         return createdAt;
     }
 
-    public PhotographerSummaryDTO getOwner() {
-        return owner;
+    public List<PhotographerSummaryDTO> getOwners() {
+        return owners;
     }
 }

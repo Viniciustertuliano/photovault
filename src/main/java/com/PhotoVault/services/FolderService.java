@@ -1,5 +1,6 @@
 package com.PhotoVault.services;
 
+import com.PhotoVault.dto.request.FolderOwnershipUpdateDTO;
 import com.PhotoVault.dto.request.FolderRequestDTO;
 import com.PhotoVault.dto.response.FolderResponseDTO;
 import com.PhotoVault.dto.response.PhotographerSummaryDTO;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,15 +42,14 @@ public class FolderService {
     }
 
     private FolderResponseDTO toResponseDTO(Folder folder){
-        PhotographerSummaryDTO owner = new PhotographerSummaryDTO(
-                folder.getOwner().getId(),
-                folder.getOwner().getName()
-        );
+        List<PhotographerSummaryDTO> ownersDTO = folder.getOwners().stream()
+                .map(owner -> new PhotographerSummaryDTO(owner.getId(), owner.getName()))
+                .collect(Collectors.toList());
         return new FolderResponseDTO(
                 folder.getId(),
                 folder.getName(),
                 folder.getCreatedAt(),
-                owner
+                ownersDTO
         );
     }
 
@@ -59,7 +60,7 @@ public class FolderService {
         Folder folder = new Folder();
         folder.setName(request.getName());
         folder.setCreatedAt(LocalDateTime.now());
-        folder.setOwner(photographer);
+        folder.addOwner(photographer);
 
         Folder savedFolder = folderRepository.save(folder);
 
@@ -96,7 +97,7 @@ public class FolderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
 
         Photographer photographer = getAuthenticatedPhotographer();
-        if(!folder.getOwner().getId().equals(photographer.getId())){
+        if(!folder.isOwner(photographer)){
             throw new ForbiddenException("You can only update your own folders");
         }
 
@@ -107,12 +108,34 @@ public class FolderService {
     }
 
     @Transactional
+    public FolderResponseDTO updateOwners(Long id, FolderOwnershipUpdateDTO requestOwnersDTO){
+        Folder folder = folderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
+        Photographer photographer = getAuthenticatedPhotographer();
+
+        if (!folder.isOwner(photographer)){
+            throw new ForbiddenException("You do not have permission to manage owners for this folder");
+        }
+
+        List<Photographer> newOwners = photographerRepository.findAllById(requestOwnersDTO.ownerIds());
+
+        if (newOwners.isEmpty()){
+            throw new IllegalArgumentException("The folder must have at least one valid owner.");
+        }
+
+        folder.setOwners(new HashSet<>(newOwners));
+        Folder updatedFolder = folderRepository.save(folder);
+
+        return toResponseDTO(updatedFolder);
+    }
+
+    @Transactional
     public void deleteFolder(Long id){
         Folder folder = folderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", id));
 
         Photographer photographer = getAuthenticatedPhotographer();
-        if(!folder.getOwner().getId().equals(photographer.getId())){
+        if(!folder.isOwner(photographer)){
             throw new ForbiddenException("You can only delete your own folders");
         }
 

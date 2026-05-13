@@ -125,7 +125,7 @@ public class FileService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if(!folder.getOwner().getId().equals(photographer.getId())){
+        if(!folder.isOwner(photographer)){
             throw new ForbiddenException("You can only upload files to your own folders");
         }
 
@@ -169,7 +169,7 @@ public class FileService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if (!file.getFolder().getOwner().getId().equals(photographer.getId())){
+        if (!file.getFolder().isOwner(photographer)){
             throw new ForbiddenException("You do not have permission to modify this file");
         }
 
@@ -181,7 +181,7 @@ public class FileService {
             Folder targetFolder = folderRepository.findById(updateDTO.folderId())
                     .orElseThrow(() -> new ResourceNotFoundException("Folder", updateDTO.folderId()));
 
-            if (!targetFolder.getOwner().getId().equals(photographer.getId())){
+            if (!targetFolder.isOwner(photographer)){
                 throw new ForbiddenException("You do not have permission to move files to this folder");
             }
 
@@ -199,7 +199,7 @@ public class FileService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if(!file.getFolder().getOwner().getId().equals(photographer.getId())){
+        if(!file.getFolder().isOwner(photographer)){
             throw new ForbiddenException("You can only delete your own files");
         }
 
@@ -219,7 +219,7 @@ public class FileService {
 
         Photographer photographer = getAuthenticatedPhotographer();
 
-        if (!file.getFolder().getOwner().getId().equals(photographer.getId())) {
+        if (!file.getFolder().isOwner(photographer)) {
             throw new ForbiddenException("You do not have access to this file");
         }
     }

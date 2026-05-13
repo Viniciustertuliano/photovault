@@ -9,14 +9,14 @@ public class FolderAccessDTO {
     private final Long id;
     private final String name;
     private final LocalDateTime createdAt;
-    private final PhotographerSummaryDTO owner;
+    private final List<PhotographerSummaryDTO> owners;
     private final Page<FileResponseDTO> files;
 
-    public FolderAccessDTO(Long id, String name, LocalDateTime createdAt, PhotographerSummaryDTO owner, Page<FileResponseDTO> files) {
+    public FolderAccessDTO(Long id, String name, LocalDateTime createdAt, List<PhotographerSummaryDTO> owners, Page<FileResponseDTO> files) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
-        this.owner = owner;
+        this.owners = owners;
         this.files = files;
     }
 
@@ -32,8 +32,8 @@ public class FolderAccessDTO {
         return createdAt;
     }
 
-    public PhotographerSummaryDTO getOwner() {
-        return owner;
+    public List<PhotographerSummaryDTO> getOwners() {
+        return owners;
     }
 
     public Page<FileResponseDTO> getFiles() {
