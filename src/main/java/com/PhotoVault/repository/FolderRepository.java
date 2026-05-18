@@ -19,4 +19,7 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 
     @Query("SELECT f FROM Folder f WHERE f.id = :id AND f.deletedAt IS NOT NULL")
     Optional<Folder> findByIdIncluidingDeleted(@Param("id") Long id);
+
+    @Query("SELECT f FROM Folder f JOIN AccessPermission ap ON ap.folder = f WHERE ap.user.id = :userId")
+    Page<Folder> findByFoldersSharedWithUser(@Param("userId") Long userId, Pageable pageable);
 }

@@ -86,7 +86,7 @@ public class SecurityConfig {
                                 ).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/share/**").permitAll()
-                        .requestMatchers("/api/folders/**").hasRole("PHOTOGRAPHER")
+                        .requestMatchers("/api/folders/**").hasAnyRole("PHOTOGRAPHER", "CLIENT")
                         .requestMatchers("/api/files/**").authenticated()
                         .requestMatchers("/api/shareLinks/**").hasRole("PHOTOGRAPHER")
                         .requestMatchers("/api/photographers/**").hasRole("PHOTOGRAPHER")
