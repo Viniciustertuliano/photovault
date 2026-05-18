@@ -5,11 +5,15 @@ import com.PhotoVault.dto.request.FileUpdateDTO;
 import com.PhotoVault.dto.response.FileResponseDTO;
 import com.PhotoVault.entities.File;
 import com.PhotoVault.entities.Folder;
+import com.PhotoVault.entities.PermissionType;
 import com.PhotoVault.entities.Photographer;
+import com.PhotoVault.entities.User;
 import com.PhotoVault.exception.*;
 import com.PhotoVault.repository.FileRepository;
 import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
+import com.PhotoVault.repository.UserRepository;
+
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -39,19 +44,25 @@ public class FileService {
     private final Path fileStorageLocation;
     private final StorageService storageService;
     private final FileValidationService fileValidationService;
+    private final AccessControlService accessControlService;
+    private final UserRepository userRepository;
 
     public FileService(FileRepository fileRepository,
                        FolderRepository folderRepository,
                        PhotographerRepository photographerRepository,
                        FileStorageProperties fileStorageProperties,
                         StorageService storageService,
-                    FileValidationService fileValidationService) {
+                    FileValidationService fileValidationService,
+                    AccessControlService accessControlService,
+                    UserRepository userRepository) {
         this.fileRepository = fileRepository;
         this.folderRepository = folderRepository;
         this.photographerRepository = photographerRepository;
         this.fileStorageProperties = fileStorageProperties;
         this.storageService = storageService;
         this.fileValidationService = fileValidationService;
+        this.accessControlService = accessControlService;
+        this.userRepository = userRepository;
 
 
         this.fileStorageLocation = Paths.get(fileStorageProperties.getDir())
@@ -151,15 +162,14 @@ public class FileService {
         }
     }
 
-    public Resource downloadFile(Long fileId){
-        File file = fileRepository.findById(fileId)
-                .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
+    @Transactional
+    public Resource viewFile(Long fileId) {
+        return getFileResourceWithPermission(fileId, PermissionType.VIEW);
+    }
 
-        try {
-            return storageService.load(file.getPath());
-        }catch (Exception ex) {
-            throw new FileStorageException("File not found: " + file.getName(), ex);
-        }
+    @Transactional
+    public Resource downloadFile(Long fileId) {
+        return getFileResourceWithPermission(fileId, PermissionType.DOWNLOAD);
     }
 
     @Transactional
@@ -212,15 +222,22 @@ public class FileService {
         fileRepository.delete(file);
     }
 
+    public User getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
 
-    public void validateAccessForFile(Long id) {
-        File file = fileRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("File", id));
+    private Resource getFileResourceWithPermission(Long fileId, PermissionType requiredPermission) {
+        File fileEntity = getFileEntity(fileId);
+        User currentUser = getAuthenticatedUser();
 
-        Photographer photographer = getAuthenticatedPhotographer();
+        accessControlService.validatePermission(currentUser, fileEntity.getFolder(), requiredPermission);
 
-        if (!file.getFolder().isOwner(photographer)) {
-            throw new ForbiddenException("You do not have access to this file");
+        try {
+            return storageService.load(fileEntity.getPath());
+        } catch (Exception ex) {
+            throw new FileStorageException(MessageFormat.format("Could not read file: {0}", fileEntity.getName()), ex);
         }
     }
 }

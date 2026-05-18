@@ -6,10 +6,13 @@ import com.PhotoVault.dto.response.FolderResponseDTO;
 import com.PhotoVault.dto.response.PhotographerSummaryDTO;
 import com.PhotoVault.entities.Folder;
 import com.PhotoVault.entities.Photographer;
+import com.PhotoVault.entities.User;
 import com.PhotoVault.exception.ForbiddenException;
 import com.PhotoVault.exception.ResourceNotFoundException;
 import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
+import com.PhotoVault.repository.UserRepository;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -27,10 +30,15 @@ import java.util.stream.Collectors;
 public class FolderService {
     private final FolderRepository folderRepository;
     private final PhotographerRepository photographerRepository;
+    private final UserRepository userRepository;
 
-    public FolderService(FolderRepository folderRepository, PhotographerRepository photographerRepository) {
+    public FolderService(
+            FolderRepository folderRepository,
+            PhotographerRepository photographerRepository,
+            UserRepository userRepository) {
         this.folderRepository = folderRepository;
         this.photographerRepository = photographerRepository;
+        this.userRepository = userRepository;
     }
 
     private Photographer getAuthenticatedPhotographer(){
@@ -151,5 +159,16 @@ public class FolderService {
         Folder restored = folderRepository.save(folder);
 
         return toResponseDTO(restored);
+    }
+
+    public Page<FolderResponseDTO> getShareWithMe(Pageable pageable) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        return folderRepository.findByFoldersSharedWithUser(user.getId(), pageable)
+                .map(this::toResponseDTO);
     }
 }

@@ -13,12 +13,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/folders")
@@ -141,5 +144,16 @@ public class FolderController {
     @Operation(summary = "Restore folder", description = "Restores a previously deleted folder by its ID.")
     public ResponseEntity<FolderResponseDTO> restoreFolder(@PathVariable Long id){
         return ResponseEntity.ok(folderService.restoreFolder(id));
+    }
+
+    @GetMapping("/shared-with-me")
+    @SecurityRequirement(name = "bearer-jwt")
+    @Operation(summary = "Get folders shared with the logged client", description = "Retrieves all folders shared with the logged client.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Folders retrieved successfully", content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/json"))
+    })    
+    public ResponseEntity<Page<FolderResponseDTO>> getSharedWithMe(@ParameterObject Pageable pageable) {
+        return ResponseEntity.ok(folderService.getShareWithMe(pageable));
     }
 }

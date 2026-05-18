@@ -28,18 +28,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
+
 @RestController
-@RequestMapping("/api/")
+@RequestMapping("/api")
 @Tag(name = "File Controller", description = "Endpoints for managing files")
 @SecurityRequirement(name = "bearer-jwt")
 public class FileController {
 
     private final FileService fileService;
-    private final ShareLinkService shareLinkService;
 
-    public FileController(FileService fileService, ShareLinkService shareLinkService) {
+    public FileController(FileService fileService) {
         this.fileService = fileService;
-        this.shareLinkService = shareLinkService;
     }
 
     @PostMapping("/folders/{folderId}/files")
@@ -70,6 +69,30 @@ public class FileController {
             @PageableDefault(size = 20, sort = "uploadDate")Pageable pageable){
 
         return ResponseEntity.ok(fileService.getFilesByFolder(folderId, pageable));
+    }
+
+    @GetMapping("/files/{id}/view")
+    @Operation(summary = "View a file by ID", description = "Renders the file in the browser. Requires VIEW permission.")
+    public ResponseEntity<Resource> viewFile(@PathVariable("id") Long fileId) {
+        Resource resource = fileService.viewFile(fileId);
+        File fileEntity = fileService.getFileEntity(fileId);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(fileEntity.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileEntity.getName() + "\"")
+                .body(resource);
+    }
+
+    @GetMapping("/files/{id}/download")
+    @Operation(summary = "Download a file by ID", description = "Downloads the file to the user's device. Requires DOWNLOAD permission.")
+    public ResponseEntity<Resource> downloadFile(@PathVariable("id") Long fileId) {
+        Resource resource = fileService.downloadFile(fileId);
+        File fileEntity = fileService.getFileEntity(fileId);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(fileEntity.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getName() + "\"")
+                .body(resource);
     }
 
     @GetMapping("files/{id}")
@@ -104,7 +127,7 @@ public class FileController {
                 .body(resource);
     }
 
-    @PatchMapping("files/{id}")
+    @PatchMapping("/files/{id}")
     @Operation(summary = "Rename or move a file", description = "Partially updates a file's name or its destination folder.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "File updated successfully"),
@@ -120,7 +143,7 @@ public class FileController {
             return ResponseEntity.ok(responseDTO);
     }
 
-    @DeleteMapping("files/{id}")
+    @DeleteMapping("/files/{id}")
     @Operation(summary = "Delete a file by ID", description = "Deletes the file with the specified ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "File deleted successfully"),

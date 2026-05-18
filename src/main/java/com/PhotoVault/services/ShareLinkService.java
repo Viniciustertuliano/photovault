@@ -2,18 +2,26 @@ package com.PhotoVault.services;
 
 import com.PhotoVault.dto.request.ShareLinkRequestDTO;
 import com.PhotoVault.dto.response.*;
+import com.PhotoVault.entities.AccessPermission;
 import com.PhotoVault.entities.File;
 import com.PhotoVault.entities.Folder;
+import com.PhotoVault.entities.PermissionType;
 import com.PhotoVault.entities.Photographer;
 import com.PhotoVault.entities.ShareLink;
+import com.PhotoVault.entities.User;
+import com.PhotoVault.entities.UserRole;
 import com.PhotoVault.exception.ForbiddenException;
 import com.PhotoVault.exception.ResourceNotFoundException;
+import com.PhotoVault.repository.AccessPermissionRepository;
 import com.PhotoVault.repository.FileRepository;
 import com.PhotoVault.repository.FolderRepository;
 import com.PhotoVault.repository.PhotographerRepository;
 import com.PhotoVault.repository.ShareLinkRepository;
+import com.PhotoVault.repository.UserRepository;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,6 +37,8 @@ public class ShareLinkService {
     private final ShareLinkRepository shareLinkRepository;
     private final FolderRepository folderRepository;
     private final PhotographerRepository photographerRepository;
+    private final AccessPermissionRepository accessPermissionRepository;
+    private final UserRepository userRepository;
     private final FileService fileService;
     private final FileRepository fileRepository;
     private final EmailService emailService;
@@ -36,12 +46,16 @@ public class ShareLinkService {
     public ShareLinkService(ShareLinkRepository shareLinkRepository,
                             FolderRepository folderRepository,
                             PhotographerRepository photographerRepository,
+                            AccessPermissionRepository accessPermissionRepository,
+                            UserRepository userRepository,
                             FileService fileService,
                             FileRepository fileRepository,
                             EmailService emailService) {
         this.shareLinkRepository = shareLinkRepository;
         this.folderRepository = folderRepository;
         this.photographerRepository = photographerRepository;
+        this.accessPermissionRepository = accessPermissionRepository;
+        this.userRepository = userRepository;
         this.fileService = fileService;
         this.fileRepository = fileRepository;
         this.emailService = emailService;
@@ -139,6 +153,15 @@ public class ShareLinkService {
 
         Folder folder = shareLink.getFolder();
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+            userRepository.findByEmail(auth.getName()).ifPresent(user -> {
+                if (user.getRole() == UserRole.CLIENT) {
+                    grantPermanentAccessIfMissing(user, folder);
+                }
+            });
+        }
+
         List<PhotographerSummaryDTO> ownersDTO = folder.getOwners().stream()
                 .map(owner -> new PhotographerSummaryDTO(owner.getId(), owner.getName()))
                 .collect(Collectors.toList());
@@ -204,5 +227,18 @@ public class ShareLinkService {
         ShareLink updated = shareLinkRepository.save(shareLink);
 
         return toResponseDTO(updated);
+    }
+
+    private void grantPermanentAccessIfMissing(User user, Folder folder) {
+        boolean exists = accessPermissionRepository.existsByUserAndFolderAndPermissionType(user, folder, PermissionType.VIEW);
+
+        if (!exists) {
+            AccessPermission permission = new AccessPermission();
+            permission.setUser(user);
+            permission.setFolder(folder);
+            permission.setPermissionType(PermissionType.VIEW);
+            permission.setCreatedAt(LocalDateTime.now());
+            accessPermissionRepository.save(permission);
+        }
     }
 }
