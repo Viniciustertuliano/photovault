@@ -126,15 +126,20 @@ public class FileService {
             throw new InvalidFileException("File cannot be empty");
         }
 
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        long fileSize = file.getSize();
+        Photographer photographer = getAuthenticatedPhotographer();
 
+        int rowsUpdated = photographerRepository.allocateStorageAtoms(photographer.getId(), fileSize);
+        if (rowsUpdated == 0) {
+            throw new StorageQuotaExceededException("Storage limit exceeded. Please upgrade your plan.");
+        }
+
+        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         fileValidationService.validateFileExtension(originalFileName);
         fileValidationService.validateFileSize(file.getSize());
 
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder", folderId));
-
-        Photographer photographer = getAuthenticatedPhotographer();
 
         if(!folder.isOwner(photographer)){
             throw new ForbiddenException("You can only upload files to your own folders");
@@ -211,12 +216,6 @@ public class FileService {
 
         if(!file.getFolder().isOwner(photographer)){
             throw new ForbiddenException("You can only delete your own files");
-        }
-
-        try {
-            storageService.delete(file.getPath());
-        }catch (IOException ex){
-            throw new FileStorageException("Could not delete file: " + file.getName(), ex);
         }
 
         fileRepository.delete(file);
