@@ -22,4 +22,6 @@ public interface StorageService {
     String getPublicUrl(String filePath);
 
     String generatePresignedUrl(String filePath, long expirationMinutes);
+
+    String store(byte[] content, String fileName) throws IOException;
 }

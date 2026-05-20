@@ -28,7 +28,9 @@ public class PhotographerService {
                 photographer.getId(),
                 photographer.getName(),
                 photographer.getEmail(),
-                photographer.getRole()
+                photographer.getRole(),
+                photographer.getStorageQuotaBytes(),
+                photographer.getStorageUsedBytes()
         );
     }
 

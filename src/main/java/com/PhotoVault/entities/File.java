@@ -48,6 +48,9 @@ public class File {
     @JoinColumn(name = "folder_id", nullable = false)
     private Folder folder;
 
+    @Column(name = "thumbnail_path", columnDefinition = "TEXT")
+    private String thumbnailPath;
+
     public File() {
         this.uploadDate = LocalDateTime.now();
     }
@@ -162,4 +165,14 @@ public class File {
     public void setFolder(Folder folder) {
         this.folder = folder;
     }
+
+    public String getThumbnailPath() {
+        return thumbnailPath;
+    }
+
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
+    }
+
+    
 }

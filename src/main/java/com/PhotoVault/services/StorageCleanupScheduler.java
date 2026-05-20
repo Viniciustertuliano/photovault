@@ -59,6 +59,10 @@ public class StorageCleanupScheduler {
 
         for (File file : expiredFiles) {
             try {
+                if (file.getThumbnailPath() != null) {
+                    storageService.delete(file.getThumbnailPath());
+                }
+                
                 storageService.delete(file.getPath());
 
                 fileRepository.hardDeleteById(file.getId());

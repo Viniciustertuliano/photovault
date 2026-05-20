@@ -4,9 +4,7 @@ package com.PhotoVault.controller;
 import com.PhotoVault.dto.request.FileUpdateDTO;
 import com.PhotoVault.dto.response.FileResponseDTO;
 import com.PhotoVault.entities.File;
-import com.PhotoVault.exception.ForbiddenException;
 import com.PhotoVault.services.FileService;
-import com.PhotoVault.services.ShareLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -75,11 +73,9 @@ public class FileController {
     @Operation(summary = "View a file by ID", description = "Renders the file in the browser. Requires VIEW permission.")
     public ResponseEntity<Resource> viewFile(@PathVariable("id") Long fileId) {
         Resource resource = fileService.viewFile(fileId);
-        File fileEntity = fileService.getFileEntity(fileId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(fileEntity.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileEntity.getName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
 
@@ -87,11 +83,9 @@ public class FileController {
     @Operation(summary = "Download a file by ID", description = "Downloads the file to the user's device. Requires DOWNLOAD permission.")
     public ResponseEntity<Resource> downloadFile(@PathVariable("id") Long fileId) {
         Resource resource = fileService.downloadFile(fileId);
-        File fileEntity = fileService.getFileEntity(fileId);
-
+        
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(fileEntity.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
 
@@ -107,17 +101,6 @@ public class FileController {
             @RequestParam(value = "shareToken", required = false) String shareToken,
             Authentication authentication){
 
-        boolean hasShareToken = shareToken != null && !shareToken.isEmpty();
-        boolean hasAuthentication = authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal());
-
-        if (hasShareToken) {
-            shareLinkService.validateTokenForFile(shareToken, fileId);
-        } else if (hasAuthentication) {
-            fileService.validateAccessForFile(fileId);
-
-        }else {
-            throw new ForbiddenException("Access denied. Provide a valid shareToken or authenticate.");
-        }
 
         Resource resource = fileService.downloadFile(fileId);
         File fileEntity = fileService.getFileEntity(fileId);

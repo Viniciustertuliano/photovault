@@ -39,7 +39,7 @@ public class PhotographerController {
     })
     public ResponseEntity<PhotographerResponseDTO> createPhotographer(@Valid @RequestBody PhotographerRequestDTO photographerReq) {
         PhotographerResponseDTO photographerRes = photographerService.createPhotographer(photographerReq);
-        URI location = URI.create(String.format("/api/photographers/%s", photographerRes.getId()));
+        URI location = URI.create(String.format("/api/photographers/%s", photographerRes.id()));
         return ResponseEntity.created(location).body(photographerRes);
     }
 

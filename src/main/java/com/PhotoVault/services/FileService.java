@@ -46,15 +46,17 @@ public class FileService {
     private final FileValidationService fileValidationService;
     private final AccessControlService accessControlService;
     private final UserRepository userRepository;
+    private final ImageService imageService;
 
     public FileService(FileRepository fileRepository,
-                       FolderRepository folderRepository,
-                       PhotographerRepository photographerRepository,
-                       FileStorageProperties fileStorageProperties,
+                        FolderRepository folderRepository,
+                        PhotographerRepository photographerRepository,
+                        FileStorageProperties fileStorageProperties,
                         StorageService storageService,
-                    FileValidationService fileValidationService,
-                    AccessControlService accessControlService,
-                    UserRepository userRepository) {
+                        FileValidationService fileValidationService,
+                        AccessControlService accessControlService,
+                        UserRepository userRepository,
+                        ImageService imageService) {
         this.fileRepository = fileRepository;
         this.folderRepository = folderRepository;
         this.photographerRepository = photographerRepository;
@@ -63,6 +65,8 @@ public class FileService {
         this.fileValidationService = fileValidationService;
         this.accessControlService = accessControlService;
         this.userRepository = userRepository;
+        this.imageService = imageService;
+
 
 
         this.fileStorageLocation = Paths.get(fileStorageProperties.getDir())
@@ -159,6 +163,19 @@ public class FileService {
             fileEntity.setUploadDate(LocalDateTime.now());
             fileEntity.setFolder(folder);
 
+            if (imageService.isImage(file.getContentType())) {
+                byte[] thumbBytes = imageService.generateThumbnail(file, 800, 800);
+
+                String baseName = storedFileName;
+                if (baseName.contains(".")) {
+                    baseName = baseName.substring(0, baseName.lastIndexOf("."));
+                }
+                String thumbFileName = baseName + "_thumb.webp";
+                String thumbPath = storageService.store(thumbBytes, thumbFileName);
+
+                fileEntity.setThumbnailPath(thumbPath);
+            }
+
             File savedFile = fileRepository.save(fileEntity);
 
             return toResponseDTO(savedFile);
@@ -169,7 +186,18 @@ public class FileService {
 
     @Transactional
     public Resource viewFile(Long fileId) {
-        return getFileResourceWithPermission(fileId, PermissionType.VIEW);
+        File fileEntity = getFileEntity(fileId);
+        User currentUser = getAuthenticatedUser();
+
+        accessControlService.validatePermission(currentUser,fileEntity.getFolder(), PermissionType.VIEW);
+        try {
+            if (fileEntity.getThumbnailPath() != null) {
+                return storageService.load(fileEntity.getThumbnailPath());
+            }
+            return storageService.load(fileEntity.getPath());
+        } catch (Exception e) {
+            throw new FileStorageException("Could not read file", e);
+        }
     }
 
     @Transactional
