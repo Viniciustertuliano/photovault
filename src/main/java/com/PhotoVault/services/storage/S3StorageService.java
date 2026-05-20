@@ -4,7 +4,6 @@ import com.PhotoVault.exception.FileStorageException;
 import com.PhotoVault.services.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -14,13 +13,13 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.function.Consumer;
 
 @Service
 @ConditionalOnProperty(name = "storage.type", havingValue = "s3")
@@ -145,4 +144,23 @@ public class S3StorageService implements StorageService {
             throw new FileStorageException("Could not generate presigned URL: " + filePath, e);
         }
     }
+
+    @Override
+    public String store(byte[] content, String fileName) throws IOException {
+        try{
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileName)
+                    .build();
+            
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
+            logger.info("Thumbnail/File '{}' uploaded to S3 Bucket '{}' from bytes", fileName, bucketName);
+            return fileName;
+        }catch (S3Exception e ){
+            logger.error("Failed to upload byte array to S3: {}", e.getMessage());
+            throw new FileStorageException("Could not store byte array file in S3: " + fileName, e);
+        }
+    }
+
+    
 }

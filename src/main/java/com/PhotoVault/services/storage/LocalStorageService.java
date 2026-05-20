@@ -89,13 +89,19 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String getPublicUrl(String filePath) {
-        // Não há URL pública em storage local
         return null;
     }
 
     @Override
     public String generatePresignedUrl(String filePath, long expirationMinutes) {
-        // Não suportado em storage local
         return null;
+    }
+
+    @Override
+    public String store(byte[] content, String fileName) throws IOException {
+        Path targetPath = this.storageLocation.resolve(fileName);
+        Files.write(targetPath, content);
+        return targetPath.toString();
+    
     }
 }
