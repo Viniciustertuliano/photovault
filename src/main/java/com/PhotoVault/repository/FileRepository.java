@@ -18,8 +18,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
     List<File> findByFolderId(Long folderId);
 
-    @Query(value = "SELECT * FROM tb_files WHERE deleted_at IS NOT NULL AND delete_at < :threshold", nativeQuery = true)
-    List<File> findExpiredFiles(@Param("threshold") LocalDateTime threshold);
+    @Query(value = "SELECT * FROM tb_files WHERE deleted_at IS NOT NULL AND deleted_at < :threshold", nativeQuery = true)    List<File> findExpiredFiles(@Param("threshold") LocalDateTime threshold);
 
     @Modifying
     @Query(value = "DELETE FROM tb_files WHERE id = :id", nativeQuery = true)

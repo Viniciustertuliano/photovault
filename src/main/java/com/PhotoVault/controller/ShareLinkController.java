@@ -32,7 +32,7 @@ public class ShareLinkController {
         this.shareLinkService = shareLinkService;
     }
 
-    @PostMapping("/folder/{folderId}/share-links")
+    @PostMapping("/folders/{folderId}/share-links")
     @SecurityRequirement(name = "bearer-jwt")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Share link created successfully",

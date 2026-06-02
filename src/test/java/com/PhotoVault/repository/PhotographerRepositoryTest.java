@@ -2,69 +2,77 @@ package com.PhotoVault.repository;
 
 import com.PhotoVault.entities.Photographer;
 import com.PhotoVault.entities.UserRole;
+import org.assertj.core.api.ThrowableAssert;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
-
 @ActiveProfiles("test")
 @DataJpaTest
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class PhotographerRepositoryTest {
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:14-alpine"))
+            .withDatabaseName("photovault_test");
 
     @Autowired
     private PhotographerRepository photographerRepository;
 
-    private Photographer createPhotographer(String name, String email){
-        Photographer photographer = new Photographer();
-        photographer.setName(name);
-        photographer.setEmail(email);
-        photographer.setPassword("123456");
-        photographer.setRole(UserRole.PHOTOGRAPHER);
-        return photographer;
+    private Photographer testPhotographer;
+
+    @BeforeEach
+    void setUp(){
+        testPhotographer = new Photographer();
+        testPhotographer.setName("Vinicius test");
+        testPhotographer.setEmail("vinicius@test.com");
+        testPhotographer.setPassword("123456");
+        testPhotographer.setRole(UserRole.PHOTOGRAPHER);
+        photographerRepository.save(testPhotographer);
     }
 
 
     @Test
     @DisplayName("Should save Photographer successfully")
     void shouldCreatePhotographer(){
+        Photographer photographer = photographerRepository.findAll().getFirst();
 
-        Photographer photographer = createPhotographer("vinicius", "vinicius@test.com");
-        Photographer photographerSalvo = photographerRepository.save(photographer);
-
-        assertThat(photographerSalvo.getId()).isNotNull();
-        assertThat(photographerSalvo.getName()).isEqualTo(photographer.getName());
-        assertThat(photographerSalvo.getEmail()).isEqualTo(photographer.getEmail());
-        assertThat(photographerSalvo.getRole()).isEqualTo(photographer.getRole());
+        assertThat(photographer.getId()).isNotNull();
+        assertThat(photographer.getName()).isEqualTo(testPhotographer.getName());
+        assertThat(photographer.getEmail()).isEqualTo(testPhotographer.getEmail());
+        assertThat(photographer.getRole()).isEqualTo(testPhotographer.getRole());
     }
 
     @Test
     @DisplayName("Should find Photographer by email successfully")
     void shouldFindPhotographerByEmail(){
-        Photographer photographer = createPhotographer("Cecilia", "cecilia@test.com");
-
-        photographerRepository.save(photographer);
-
-        Optional<Photographer> result = photographerRepository.findByEmail(photographer.getEmail());
+        Optional<Photographer> result = photographerRepository.findByEmail(testPhotographer.getEmail());
 
         assertThat(result).isPresent();
-        assertThat(result.get().getEmail()).isEqualTo(photographer.getEmail());
+        assertThat(result.get().getEmail()).isEqualTo(testPhotographer.getEmail());
     }
 
     @Test
     @DisplayName("Should return empty when email does not exist")
     void shouldReturnEmptyWhenEmailDoesNotExist(){
-        Photographer photographer = createPhotographer("Cecilia", "cecilia@test.com");
-
-        photographerRepository.save(photographer);
-
         Optional<Photographer> result = photographerRepository.findByEmail("test@test.com");
 
         assertThat(result).isEmpty();
@@ -73,22 +81,18 @@ public class PhotographerRepositoryTest {
     @Test
     @DisplayName("Should update Photographer successfully")
     void shouldUpdatePhotographer(){
+        Photographer photographerResult = photographerRepository.findAll().getFirst();
 
+        photographerResult.setName("vinicius");
 
-        Photographer photographer = createPhotographer("Cecilia", "cecilia@test.com");
+        Photographer photographerAlt = photographerRepository.save(photographerResult);
 
-        Photographer photographerSave = photographerRepository.save(photographer);
-
-        photographerSave.setName("vinicius");
-
-        Photographer photographerAlt = photographerRepository.save(photographerSave);
-
-        assertThat(photographerAlt.getId()).isEqualTo(photographerSave.getId());
-        assertThat(photographerAlt.getEmail()).isEqualTo(photographerSave.getEmail());
+        assertThat(photographerAlt.getId()).isEqualTo(photographerResult.getId());
+        assertThat(photographerAlt.getEmail()).isEqualTo(photographerResult.getEmail());
         assertThat(photographerAlt.getName()).isEqualTo("vinicius");
         assertThat(photographerAlt.getName()).isNotEqualTo("Cecilia");
 
-        Optional<Photographer> retDB = photographerRepository.findById(photographerSave.getId());
+        Optional<Photographer> retDB = photographerRepository.findById(photographerResult.getId());
         assertThat(retDB).isPresent();
         assertThat(retDB.get().getName()).isEqualTo("vinicius");
 
@@ -98,23 +102,28 @@ public class PhotographerRepositoryTest {
     @Test
     @DisplayName("Should delete Photographer successfully")
     void shouldDeletePhotographer(){
-        Photographer photographer = createPhotographer("Cecilia", "cecilia@test.com");
+        photographerRepository.delete(testPhotographer);
 
-        Photographer photographerSave = photographerRepository.save(photographer);
-
-        photographerRepository.delete(photographerSave);
-
-        assertThat(photographerRepository.findById(photographerSave.getId())).isEmpty();
+        assertThat(photographerRepository.findById(testPhotographer.getId())).isEmpty();
     }
 
     @Test
     @DisplayName("Should return all Photographers")
     void shouldFindAllPhotographers(){
-        Photographer photographer1 = createPhotographer("Cecilia", "cecilia@test.com");
-        Photographer photographer2 = createPhotographer("Vinicius", "vinicius@test.com");
-        Photographer photographer3 = createPhotographer("Ana", "ana@test.com");
+        Photographer testOtherPhotographer = new Photographer();
+        testOtherPhotographer.setName("Cecilia test");
+        testOtherPhotographer.setEmail("Cecilia@test.com");
+        testOtherPhotographer.setPassword("123456");
+        testOtherPhotographer.setRole(UserRole.PHOTOGRAPHER);
 
-        photographerRepository.saveAll(List.of(photographer1, photographer2, photographer3));
+        Photographer testOtherPhotographer2 = new Photographer();
+        testOtherPhotographer2.setName("Thayna test");
+        testOtherPhotographer2.setEmail("Thayna@test.com");
+        testOtherPhotographer2.setPassword("123456");
+        testOtherPhotographer2.setRole(UserRole.PHOTOGRAPHER);
+
+
+        photographerRepository.saveAll(List.of(testOtherPhotographer, testOtherPhotographer2));
 
         List<Photographer> result = photographerRepository.findAll();
 
@@ -123,22 +132,20 @@ public class PhotographerRepositoryTest {
 
         assertThat(result)
                 .extracting(Photographer::getName)
-                .containsExactlyInAnyOrder("Cecilia", "Vinicius", "Ana");
+                .containsExactlyInAnyOrder("Vinicius test", "Cecilia test", "Thayna test");
 
         assertThat(result)
                 .extracting(Photographer::getEmail)
-                .contains("cecilia@test.com", "vinicius@test.com", "ana@test.com");
+                .contains("vinicius@test.com", "Cecilia@test.com", "Thayna@test.com");
     }
 
     @Test
     @DisplayName("Should find Photographer by ID successfully")
     void shouldFindPhotographerById(){
-        Photographer photographer = createPhotographer("Cecilia", "cecilia@test.com");
-        Photographer photographerSave = photographerRepository.save(photographer);
-        Optional<Photographer> result = photographerRepository.findById(photographerSave.getId());
+        Optional<Photographer> result = photographerRepository.findById(testPhotographer.getId());
 
         assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(photographerSave.getId());
+        assertThat(result.get().getId()).isEqualTo(testPhotographer.getId());
     }
 
     @Test
@@ -152,15 +159,15 @@ public class PhotographerRepositoryTest {
     @Test
     @DisplayName("Should not allow duplicate email")
     void shouldNotAllowDuplicateEmail(){
-        Photographer photographer1 = createPhotographer("Cecilia", "cecilia@test.com");
-        Photographer photographer2 = createPhotographer("Vinicius", "cecilia@test.com");
-
-        photographerRepository.save(photographer1);
+        Photographer testOtherPhotographer = new Photographer();
+        testOtherPhotographer.setName("vinicius test");
+        testOtherPhotographer.setEmail("vinicius@test.com");
+        testOtherPhotographer.setPassword("123456");
+        testOtherPhotographer.setRole(UserRole.PHOTOGRAPHER);
 
         assertThatThrownBy(() -> {
-            photographerRepository.save(photographer2);
-            photographerRepository.flush();
-        }).isInstanceOf(DataIntegrityViolationException.class);
+                photographerRepository.saveAndFlush(testOtherPhotographer);
+            }).isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
